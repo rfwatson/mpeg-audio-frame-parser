@@ -1,21 +1,5 @@
 # Mp3FrameParser
 
-**TODO: Add description**
+Given a series of binary packets, extract any complete MP3 frames that can be found and return them to clients.
 
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `mp3_frame_parser` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:mp3_frame_parser, "~> 0.1.0"}
-  ]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/mp3_frame_parser](https://hexdocs.pm/mp3_frame_parser).
-
+Currently WIP.
