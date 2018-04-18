@@ -8,6 +8,13 @@ In theory supports all of MPEG layer 1, 2 and 3 and versions 1, 2 and 2.5, but i
 
 Currently WIP. See the [moduledoc](https://github.com/rfwatson/mpeg-audio-frame-parser/blob/master/lib/mpeg_audio_frame_parser.ex) for usage examples.
 
+## TODO
+
+* Validate CRC signature if present
+* Extract additional metadata (channel mode, copyright, etc)
+* Further tighten frame validation
+* Investigate improvements to public API/interface
+
 ## Contributing
 
 Contributions welcome! Please ensure that appropriate automated tests are included with any pull requests.
