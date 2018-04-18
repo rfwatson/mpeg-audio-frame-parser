@@ -50,8 +50,7 @@ defmodule MPEGAudioFrameParser.Impl do
 
   # Not synced, found a sync word. Create a new frame struct:
   defp process_bytes(%{current_frame: nil} = state, <<@sync_word::size(11), header::size(21), rest::bits>>) do
-    header = <<@sync_word::size(11), header::size(21)>>
-    frame = Frame.from_header(header)
+    frame = <<@sync_word::size(11), header::size(21)>> |> Frame.from_header
     process_bytes(%{state | current_frame: frame}, rest)
   end
 
@@ -63,8 +62,7 @@ defmodule MPEGAudioFrameParser.Impl do
 
   # Synced, but with an invalid header. Discard a byte:
   defp process_bytes(%{current_frame: %Frame{valid: false}} = state, packet) do
-    data = <<state.current_frame.data, packet::bits>>
-    <<_byte, rest::bits>> = data
+    <<_byte, rest::bits>> = <<state.current_frame.data, packet::bits>>
     process_bytes(%{state | current_frame: nil}, rest)
   end
 
