@@ -28,6 +28,12 @@ defmodule MPEGAudioFrameParser.Impl do
 
   # Private Functions
 
+  # Synced, and the current frame is complete:
+  defp process_bytes(%{current_frame: %Frame{complete: true}} = state, packet) do
+    frames = [state.current_frame | state.frames]
+    process_bytes(%{state | current_frame: nil, frames: frames}, packet)
+  end
+
   # No data left, or not enough to be able to validate next frame. Return:
   defp process_bytes(state, packet)
   when bit_size(packet) < 32
@@ -60,13 +66,6 @@ defmodule MPEGAudioFrameParser.Impl do
     data = <<state.current_frame.data, packet::bits>>
     <<_byte, rest::bits>> = data
     process_bytes(%{state | current_frame: nil}, rest)
-  end
-
-  # Synced, and the current frame is complete:
-  defp process_bytes(%{current_frame: %Frame{complete: true}} = state, packet) do
-    frames = [state.current_frame | state.frames]
-    new_state = %{state | current_frame: nil, frames: frames}
-    process_bytes(new_state, packet)
   end
 
   # Synced, current frame not complete and we have bytes available. Add bytes to frame:

@@ -13,12 +13,9 @@ defmodule MPEGAudioFrameParser.ImplTest do
 
     test "handles a single frame at the start of a packet" do
       {:ok, state} = init()
-
       {:ok, state} = add_packet(state, @frame1)
 
-      assert state.current_frame.data == @frame1
-      assert state.current_frame.complete
-      assert state.frames == []
+      assert %{current_frame: nil, frames: [%{data: @frame1}]} = state
     end
 
     test "handles a single frame in the middle of a packet" do
@@ -27,9 +24,7 @@ defmodule MPEGAudioFrameParser.ImplTest do
       packet = <<0, 1, 2, 3, @frame1::binary>>
       {:ok, state} = add_packet(state, packet)
 
-      assert state.current_frame.data == @frame1
-      assert state.current_frame.complete
-      assert state.frames == []
+      assert %{current_frame: nil, frames: [%{data: @frame1}]} = state
     end
 
     test "ignores a packet that includes no valid frames at all" do
@@ -37,8 +32,7 @@ defmodule MPEGAudioFrameParser.ImplTest do
 
       {:ok, state} = add_packet(state, <<1::size(10240)>>)
 
-      assert state.frames == []
-      assert state.current_frame == nil
+      assert %{current_frame: nil, frames: []} = state
     end
 
     test "handles two frames in consecutive packets" do
@@ -47,9 +41,7 @@ defmodule MPEGAudioFrameParser.ImplTest do
       {:ok, state} = add_packet(state, @frame1)
       {:ok, state} = add_packet(state, @frame3)
 
-      assert length(state.frames) == 1
-      assert List.first(state.frames).data == @frame1
-      assert state.current_frame.data == @frame3
+      assert %{current_frame: nil, frames: [%{data: @frame3}, %{data: @frame1}]} = state
     end
 
     test "handles a frame split unevenly across consecutive packets" do
@@ -57,13 +49,9 @@ defmodule MPEGAudioFrameParser.ImplTest do
 
       part1 = :binary.part(@frame1, {0, 256})
       part2 = :binary.part(@frame1, {byte_size(@frame1), -(byte_size(@frame1) - 256)})
-      part3 = :binary.part(@frame3, {0, 256})
 
-      packet = <<8, 0, 1, 0, 0, 0, 7, 90, 93, part1::binary>>
-      {:ok, state} = add_packet(state, packet)
-
-      packet = <<part2::binary, part3::binary>>
-      {:ok, state} = add_packet(state, packet)
+      {:ok, state} = add_packet(state, <<0, 1, 2, 3, part1::binary>>)
+      {:ok, state} = add_packet(state, part2)
 
       assert length(state.frames) == 1
       assert List.first(state.frames).data == @frame1
@@ -71,23 +59,21 @@ defmodule MPEGAudioFrameParser.ImplTest do
 
     test "handles three frames in a single packet" do
       {:ok, state} = init()
-
       {:ok, state} = add_packet(state, <<@frame1::binary, @frame1::binary, @frame1::binary>>)
 
-      assert length(state.frames) == 2
-      assert Enum.map(state.frames, & &1.data) == [@frame1, @frame1]
+      assert length(state.frames) == 3
+      assert Enum.map(state.frames, & &1.data) == [@frame1, @frame1, @frame1]
     end
 
     test "handles three frames in consecutive packets" do
       {:ok, state} = init()
-
       {:ok, state} = add_packet(state, @frame3)
       {:ok, state} = add_packet(state, @frame3)
       {:ok, state} = add_packet(state, @frame3)
 
-      assert length(state.frames) == 2
-      assert Enum.map(state.frames, & &1.data) == [@frame3, @frame3]
-      assert state.current_frame.data == @frame3
+      assert length(state.frames) == 3
+      assert Enum.map(state.frames, & &1.data) == [@frame3, @frame3, @frame3]
+      assert is_nil(state.current_frame)
     end
   end
 
@@ -104,8 +90,6 @@ defmodule MPEGAudioFrameParser.ImplTest do
       {:ok, state} = init()
 
       {:ok, state} = add_packet(state, @frame1)
-      {:ok, state} = add_packet(state, @frame1)
-
       {:ok, frame, state} = pop_frame(state)
 
       assert frame.data == @frame1
@@ -117,7 +101,6 @@ defmodule MPEGAudioFrameParser.ImplTest do
 
       {:ok, state} = add_packet(state, @frame1)
       {:ok, state} = add_packet(state, @frame2)
-      {:ok, state} = add_packet(state, @frame1)
 
       {:ok, frame, state} = pop_frame(state)
       assert frame.data == @frame1

@@ -36,9 +36,7 @@ defmodule MPEGAudioFrameParser do
 
   ## Example
 
-  Using a faked 128kbps 44.1k stereo MP3 frame. Note at least two headers must
-  be processed to return a single MP3 frame - otherwise frame completeness
-  couldn't be assured:
+  Using a faked 128kbps 44.1k stereo MP3 frame:
 
       iex> packet = <<0b11111111111_11_01_0_1001_00_0_0_00_00_0_0_00::size(32), 1::size(3304)>>
       ...> {:ok, _pid} = MPEGAudioFrameParser.start_link()
@@ -74,9 +72,7 @@ defmodule MPEGAudioFrameParser do
 
   ## Example
 
-  Using a faked 128kbps 44.1k stereo MP3 frame. Note at least two headers must
-  be processed to return a single MP3 frame - otherwise frame completeness
-  couldn't be assured:
+  Using a faked 128kbps 44.1k stereo MP3 frame:
 
       iex> packet = <<0b11111111111_11_01_0_1001_00_0_0_00_00_0_0_00::size(32), 1::size(3304)>>
       ...> {:ok, _pid} = MPEGAudioFrameParser.start_link()
