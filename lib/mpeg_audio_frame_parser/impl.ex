@@ -62,19 +62,11 @@ defmodule MPEGAudioFrameParser.Impl do
     process_bytes(%{state | current_frame: nil}, rest)
   end
 
-  # Synced, frame complete, and looks like another sync word. Create a new frame struct:
-  defp process_bytes(%{current_frame: %Frame{complete: true}} = state, <<@sync_word::size(11), header::size(21), rest::bits>>) do
-    header = <<@sync_word::size(11), header::size(21)>>
-    frames = [state.current_frame | state.frames]
-    new_state = %{state | current_frame: Frame.from_header(header), frames: frames}
-    process_bytes(new_state, rest)
-  end
-
-  # Synced, frame complete, but next frame looks bad. Prepend, discard a byte and unsync:
+  # Synced, and the current frame is complete:
   defp process_bytes(%{current_frame: %Frame{complete: true}} = state, packet) do
-    Logger.warn "Lost sync. Discarding a byte and searching again for a sync word."
-    <<_byte, rest>> = state.current_frame.data
-    process_bytes(%{state | current_frame: nil}, <<rest, packet::bits>>)
+    frames = [state.current_frame | state.frames]
+    new_state = %{state | current_frame: nil, frames: frames}
+    process_bytes(new_state, packet)
   end
 
   # Synced, current frame not complete and we have bytes available. Add bytes to frame:

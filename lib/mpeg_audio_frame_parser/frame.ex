@@ -17,7 +17,8 @@ defmodule MPEGAudioFrameParser.Frame do
   @header_length 32
 
   def from_header(header)
-  when bit_size(header) == @header_length
+  when is_binary(header)
+  and bit_size(header) == @header_length
   do
     frame = %Frame{data: header}
     |> Map.put(:version_id, parse_version(header))
