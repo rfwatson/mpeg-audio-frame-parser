@@ -67,7 +67,7 @@ defmodule MPEGAudioFrameParser.Impl do
   end
 
   # Synced, current frame not complete and we have bytes available. Add bytes to frame:
-  defp process_bytes(%{current_frame: %Frame{complete: false}} = state, packet) do
+  defp process_bytes(state, packet) do
     {:ok, frame, rest} = Frame.add_bytes(state.current_frame, packet)
     process_bytes(%{state | current_frame: frame}, rest)
   end

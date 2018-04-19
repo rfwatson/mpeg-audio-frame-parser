@@ -200,8 +200,7 @@ defmodule MPEGAudioFrameParser.Frame do
     end
   end
 
-  defp parse_padding(<<@sync_word::size(11), _::size(11), 0b0::size(1), _::bits>>), do: 0
-  defp parse_padding(<<@sync_word::size(11), _::size(11), 0b1::size(1), _::bits>>), do: 1
+  defp parse_padding(<<@sync_word::size(11), _::size(11), padding_bit::size(1), _::bits>>), do: padding_bit
 
   defp samples_per_frame(%Frame{layer: :layer1}), do: 384
   defp samples_per_frame(%Frame{layer: :layer2}), do: 1152
