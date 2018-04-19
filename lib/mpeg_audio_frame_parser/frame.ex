@@ -184,16 +184,18 @@ defmodule MPEGAudioFrameParser.Frame do
   end
 
   defp parse_sample_rate(<<@sync_word::size(11), version_bits::size(2), _::size(7), sample_rate_bits::size(2), _::bits>>) do
-    case {version_bits, sample_rate_bits} do
-      {0b11, 0b00} -> 44100
-      {0b11, 0b01} -> 48000
-      {0b11, 0b10} -> 32000
-      {0b10, 0b00} -> 22050
-      {0b10, 0b01} -> 24000
-      {0b10, 0b10} -> 16000
-      {0b00, 0b00} -> 11025
-      {0b00, 0b01} -> 12000
-      {0b00, 0b10} -> 8000
+    version_atom = version_atom(version_bits)
+
+    case {version_atom, sample_rate_bits} do
+      {:version1, 0b00} -> 44100
+      {:version1, 0b01} -> 48000
+      {:version1, 0b10} -> 32000
+      {:version2, 0b00} -> 22050
+      {:version2, 0b01} -> 24000
+      {:version2, 0b10} -> 16000
+      {:"version2.5", 0b00} -> 11025
+      {:"version2.5", 0b01} -> 12000
+      {:"version2.5", 0b10} -> 8000
       _ -> :bad
     end
   end
