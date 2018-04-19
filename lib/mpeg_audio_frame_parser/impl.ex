@@ -29,7 +29,9 @@ defmodule MPEGAudioFrameParser.Impl do
   # Private Functions
 
   # Synced, and the current frame is complete:
-  defp process_bytes(%{current_frame: %Frame{complete: true}} = state, packet) do
+  defp process_bytes(%{current_frame: %Frame{length: frame_length, data: data}} = state, packet)
+  when frame_length == byte_size(data)
+  do
     frames = [state.current_frame | state.frames]
     process_bytes(%{state | current_frame: nil, frames: frames}, packet)
   end

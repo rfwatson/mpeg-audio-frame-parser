@@ -7,8 +7,8 @@ defmodule MPEGAudioFrameParser.Frame do
             padding: 0,
             channel_mode: nil,
             data: <<>>,
-            valid: false,
-            complete: false
+            length: 0,
+            valid: false
 
   alias MPEGAudioFrameParser.Frame
   require Logger
@@ -28,7 +28,7 @@ defmodule MPEGAudioFrameParser.Frame do
     |> Map.put(:sample_rate, parse_sample_rate(header))
     |> Map.put(:padding, parse_padding(header))
 
-    %{frame | valid: header_valid?(frame)}
+    %{frame | valid: header_valid?(frame), length: frame_length(frame)}
   end
 
   def header_valid?(%Frame{version_id: version_id, layer: layer, bitrate: bitrate, sample_rate: sample_rate})
@@ -55,8 +55,8 @@ defmodule MPEGAudioFrameParser.Frame do
 
   def add_bytes(frame, packet) do
     limit = bytes_missing(frame)
-    {:ok, bytes, rest, complete} = split_packet(packet, limit)
-    {:ok, %{frame | data: frame.data <> bytes, complete: complete}, rest}
+    {:ok, bytes, rest} = split_packet(packet, limit)
+    {:ok, %{frame | data: frame.data <> bytes}, rest}
   end
 
   def bytes_missing(frame) do
@@ -74,7 +74,7 @@ defmodule MPEGAudioFrameParser.Frame do
     part1 = :binary.part(packet, {0, bytes_to_take})
     part2 = :binary.part(packet, {bytes_available, -bytes_to_leave})
 
-    {:ok, part1, part2, bytes_to_take == limit}
+    {:ok, part1, part2}
   end
 
   defp parse_version(<<@sync_word::size(11), bits::size(2), _::bits>>), do: version_atom(bits)
