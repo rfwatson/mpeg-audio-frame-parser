@@ -1,7 +1,7 @@
 defmodule MPEGAudioFrameParser.FrameTest do
   use ExUnit.Case
   alias MPEGAudioFrameParser.Frame
-  import Frame, only: [from_header: 1, header_valid?: 1, frame_length: 1, bytes_missing: 1]
+  import Frame, only: [from_header: 1]
 
   # MP3, 128kbps, no CRC protection, 44100hz, no padding, stereo
   @header1 <<0b11111111111_11_01_0_1001_00_0_0_00_00_0_0_00::size(32)>>
@@ -80,25 +80,21 @@ defmodule MPEGAudioFrameParser.FrameTest do
   end
 
   test "header validity" do
-    assert from_header(@header1) |> header_valid?
-    assert from_header(@header2) |> header_valid?
-    assert from_header(@header3) |> header_valid?
-    assert from_header(@header4) |> header_valid?
-    assert from_header(@header5) |> header_valid?
-    assert from_header(@header6) |> header_valid?
-    refute from_header(@header7) |> header_valid?
+    assert from_header(@header1).valid
+    assert from_header(@header2).valid
+    assert from_header(@header3).valid
+    assert from_header(@header4).valid
+    assert from_header(@header5).valid
+    assert from_header(@header6).valid
+    refute from_header(@header7).valid
   end
 
   test "frame_length" do
-    assert from_header(@header1) |> frame_length == 417
-    assert from_header(@header2) |> frame_length == 768
-    assert from_header(@header3) |> frame_length == 105
-    assert from_header(@header4) |> frame_length == 835
-    assert from_header(@header5) |> frame_length == 208
-    assert from_header(@header6) |> frame_length == 360
-  end
-
-  test "bytes missing" do
-    assert from_header(@header1) |> bytes_missing == 413
+    assert from_header(@header1).length == 417
+    assert from_header(@header2).length == 768
+    assert from_header(@header3).length == 105
+    assert from_header(@header4).length == 835
+    assert from_header(@header5).length == 208
+    assert from_header(@header6).length == 360
   end
 end

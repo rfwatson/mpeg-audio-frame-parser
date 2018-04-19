@@ -20,48 +20,33 @@ defmodule MPEGAudioFrameParser.Frame do
   when is_binary(header)
   and bit_size(header) == @header_length
   do
-    frame = %Frame{data: header}
-    |> Map.put(:version_id, parse_version(header))
-    |> Map.put(:layer, parse_layer(header))
-    |> Map.put(:crc_protection, parse_crc_protection(header))
-    |> Map.put(:bitrate, parse_bitrate(header))
-    |> Map.put(:sample_rate, parse_sample_rate(header))
-    |> Map.put(:padding, parse_padding(header))
-
-    %{frame | valid: header_valid?(frame), length: frame_length(frame)}
+    with version_id = parse_version(header),
+         layer = parse_layer(header),
+         crc_protection = parse_crc_protection(header),
+         bitrate = parse_bitrate(header),
+         sample_rate = parse_sample_rate(header),
+         padding = parse_padding(header),
+         valid = valid?(version_id, layer, bitrate, sample_rate),
+         frame_length = frame_length(version_id, layer, bitrate, sample_rate, padding)
+    do
+      %Frame{
+        data: header,
+        version_id: version_id,
+        layer: layer,
+        crc_protection: crc_protection,
+        bitrate: bitrate,
+        sample_rate: sample_rate,
+        padding: padding,
+        valid: valid,
+        length: frame_length,
+      }
+    end
   end
-
-  def header_valid?(%Frame{version_id: version_id, layer: layer, bitrate: bitrate, sample_rate: sample_rate})
-  when version_id != :reserved
-  and layer != :reserved
-  and bitrate != :bad
-  and sample_rate != :bad
-  do
-    true
-  end
-
-  def header_valid?(%Frame{}), do: false
-
-  def frame_length(%Frame{bitrate: bitrate, sample_rate: sample_rate} = frame)
-  when is_integer(bitrate)
-  and is_integer(sample_rate)
-  do
-    bits_per_frame = samples_per_frame(frame) / 8
-    (bits_per_frame * (frame.bitrate * 1000) / frame.sample_rate + frame.padding)
-    |> trunc
-  end
-
-  def frame_length(%Frame{}), do: 0
 
   def add_bytes(frame, packet) do
-    limit = bytes_missing(frame)
+    limit = frame.length - byte_size(frame.data) |> max(0)
     {:ok, bytes, rest} = split_packet(packet, limit)
     {:ok, %{frame | data: frame.data <> bytes}, rest}
-  end
-
-  def bytes_missing(frame) do
-    (frame_length(frame) - byte_size(frame.data))
-    |> max(0)
   end
 
   # Private Functions
@@ -202,9 +187,31 @@ defmodule MPEGAudioFrameParser.Frame do
 
   defp parse_padding(<<@sync_word::size(11), _::size(11), padding_bit::size(1), _::bits>>), do: padding_bit
 
-  defp samples_per_frame(%Frame{layer: :layer1}), do: 384
-  defp samples_per_frame(%Frame{layer: :layer2}), do: 1152
-  defp samples_per_frame(%Frame{layer: :layer3, version_id: :version1}), do: 1152
-  defp samples_per_frame(%Frame{layer: :layer3, version_id: _}), do: 576
-  defp samples_per_frame(%Frame{}), do: 0
+  defp samples_per_frame(_, :layer1), do: 384
+  defp samples_per_frame(_, :layer2), do: 1152
+  defp samples_per_frame(:version1, :layer3), do: 1152
+  defp samples_per_frame(_, :layer3), do: 576
+  defp samples_per_frame(_, _), do: 0
+
+  defp valid?(version_id, layer, bitrate, sample_rate)
+  when version_id != :reserved
+  and layer != :reserved
+  and bitrate != :bad
+  and sample_rate != :bad
+  do
+    true
+  end
+
+  defp valid?(_version_id, _layer, _bitrate, _sample_rate), do: false
+
+  defp frame_length(version_id, layer, bitrate, sample_rate, padding)
+  when is_integer(bitrate)
+  and is_integer(sample_rate)
+  do
+    bits_per_frame = samples_per_frame(version_id, layer) / 8
+    (bits_per_frame * (bitrate * 1000) / sample_rate + padding)
+    |> trunc
+  end
+
+  defp frame_length(_version_id, _layer, _bitrate, _sample_rate, _padding), do: 0
 end
